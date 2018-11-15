@@ -1,0 +1,373 @@
+variables: secrets.yml
+
+tasks:
+
+## Get from anime list any shows that have unseen episodes, add to Sonarr and search for missing
+## Also added with anime type and tag, tag list from http://localhost:8989/api/tag?apikey=APIKEY
+  anime_unseen_add:
+    priority: 1
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    thetvdb_lookup: yes
+    tvmaze_lookup: yes
+    trakt_lookup:
+      account: "{? trakt.account ?}"
+      username: "{? trakt.account ?}"
+    trakt_list:
+      account: '{? trakt.account ?}'
+      list: '{? trakt.series ?}'
+      type: shows
+    if:
+      - "tvmaze_series_language == 'Japanese' and tvmaze_series_show_type == 'Animation' or 'anime' in trakt_genres": accept
+      - trakt_watched: reject
+    list_add:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          series_type: anime
+          tags: [1]
+          root_folder_path: "/{? folder.series ?}"
+          ignore_episodes_with_files: yes
+          search_missing_episodes: yes
+
+## Get from anime list any shows that have already been seen, add to Sonarr and only get future episodes
+## Also added with anime tag, tag list from http://localhost:8989/api/tag?apikey=APIKEY
+## Skip ended to keep Sonarr clean
+  anime_seen_add:
+    priority: 2
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    thetvdb_lookup: yes
+    tvmaze_lookup: yes
+    trakt_lookup:
+      account: "{? trakt.account ?}"
+      username: "{? trakt.account ?}"
+    trakt_list:
+      account: '{? trakt.account ?}'
+      list: '{? trakt.series ?}'
+      type: shows
+    if:
+      - "tvmaze_series_language == 'Japanese' and tvmaze_series_show_type == 'Animation' or 'anime' in trakt_genres ": accept
+      - "tvdb_status == 'Ended' or trakt_watched == 'False'": reject
+    list_add:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          series_type: anime
+          tags: [1]
+          root_folder_path: "/{? folder.series ?}"
+          ignore_episodes_with_files: yes
+          ignore_episodes_without_files: yes
+
+## Get from series list any shows that have unseen episodes, add to Sonarr and search for missing
+  series_unseen_add:
+    priority: 3
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    trakt_lookup:
+      account: "{? trakt.account ?}"
+      username: "{? trakt.account ?}"
+    trakt_list:
+      account: '{? trakt.account ?}'
+      list: '{? trakt.series ?}'
+      type: shows
+    if:
+      - "trakt_series_status == 'ended' and trakt_watched": reject
+    accept_all: yes
+    list_add:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          ignore_episodes_with_files: yes
+          root_folder_path: "/{? folder.series ?}"
+          search_missing_episodes: yes
+
+## Get from series list any shows that have already been seen, add to Sonarr and only get future episodes
+## Skip ended to keep Sonarr clean
+  series_seen_add:
+    priority: 4
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    thetvdb_lookup: yes
+    trakt_lookup:
+      account: "{? trakt.account ?}"
+      username: "{? trakt.account ?}"
+    trakt_list:
+      account: '{? trakt.account ?}'
+      list: '{? trakt.series ?}'
+      type: shows
+    if:
+      - "tvdb_status != 'Ended' and trakt_watched": accept
+    list_add:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          ignore_episodes_with_files: yes
+          ignore_episodes_without_files: yes
+          root_folder_path: "/{? folder.series ?}"
+
+## List compare Sonarr and series list, anything in Sonarr that is not in series list is added to entry_list sonarr-rm
+## A direct list match between trakt and Sonarr does not work and removes shows incorrectly
+  all_sync:
+    priority: 6
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    trakt_lookup: yes
+    sonarr_list:
+      base_url: http://localhost
+      port: 8989
+      api_key: '{? sonarr.api ?}'
+    list_match:
+      from:
+        - trakt_list:
+            account: '{? trakt.account ?}'
+            list: '{? trakt.series ?}'
+            type: shows
+      action: reject
+    accept_all: yes
+    list_remove:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          root_folder_path: "/{? folder.series ?}"
+
+## Manual task to clear Sonarr for testing
+  all_delete:
+    manual: yes
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    trakt_list:
+      account: '{? trakt.account ?}'
+      list: '{? trakt.series ?}'
+      type: shows
+    accept_all: yes
+    list_remove:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          ignore_episodes_with_files: no
+          ignore_episodes_without_files: yes
+
+## delete watched episodes
+  seen_episodes_delete:
+    priority: 4
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    filesystem:
+      path: /shows/
+      recursive: yes
+      retrieve: files
+    metainfo_series: yes
+    trakt_lookup:
+      account: '{? trakt.account ?}'
+      username: '{? trakt.account ?}'
+    list_match:
+      from:
+        - trakt_list:
+            account: '{? trakt.account ?}'
+            username: '{? trakt.account ?}'
+            list: watched
+            type: episodes
+      remove_on_match: no
+      action: accept
+      single_match: no
+    delete:
+      allow_dir: no
+      along:
+        extensions:
+          - '*'
+
+## remove series that have all episodes currently seen from sonarr and update trakt list
+  seen_series_remove:
+    priority: 4
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    text:
+      url: series.txt
+      entry:
+        title: "(.*)"
+        url: "()"
+    crossmatch:
+      from:
+        - trakt_list:
+            account: '{? trakt.account ?}'
+            username: '{? trakt.account ?}'
+            list: '{? trakt.series ?}'
+            type: shows 
+      fields:
+        - title
+      action: accept
+      exact: no ## strip_dates maybe
+    list_remove:
+      - trakt_list:
+          account: '{? trakt.account ?}'
+          username: '{? trakt.account ?}'
+          list: '{? trakt.series ?}'
+          type: shows 
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          root_folder_path: "/{? folder.series ?}"
+    list_add:
+      - trakt_list:
+          account: '{? trakt.account ?}'
+          username: '{? trakt.account ?}'
+          list: watchlist
+          type: shows 
+
+## remove watched and ended/canceled series from trakt watchlist and add to dropped
+  done_series_remove:
+    priority: 4
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    trakt_lookup:
+      account: "{? trakt.account ?}"
+      username: "{? trakt.account ?}"
+    trakt_list:
+      account: '{? trakt.account ?}'
+      username: '{? trakt.account ?}'
+      list: watchlist
+      type: shows 
+    if:
+      - "trakt_watched and trakt_series_status == 'ended'": accept
+      - "trakt_watched and trakt_series_status == 'canceled'": accept
+    list_remove:
+      - trakt_list:
+          account: '{? trakt.account ?}'
+          username: '{? trakt.account ?}'
+          list: '{? trakt.series ?}'
+          type: shows 
+      - trakt_list:
+          account: '{? trakt.account ?}'
+          username: '{? trakt.account ?}'
+          list: watchlist
+          type: shows
+    list_add:
+      - trakt_list:
+          account: '{? trakt.account ?}'
+          username: '{? trakt.account ?}'
+          list: dropped
+          type: shows 
+
+## Check for new releases matching criteria and add to watchlist
+  movies_trakt_add:
+    priority: 10
+    imdb_lookup: yes
+    trakt_list:
+      username: giladg
+      list: latest-releases
+      type: movies
+      strip_dates: yes
+    imdb:
+      min_score: 6.5
+      min_votes: 5000
+      accept_mpaa_ratings:
+        - G
+        - PG
+        - PG-13
+    list_add:
+      - trakt_list:
+          username: '{? trakt.account ?}'
+          account: '{? trakt.account ?}'
+          list: '{? trakt.movies ?}'
+          type: movies
+
+## get next episode to watch from trakt
+  episode_next_trakt:
+    disable:
+       - seen
+       - seen_info_hash
+       - retry_failed
+    next_trakt_episodes:
+      username: '{? trakt.account ?}'
+      account: '{? trakt.account ?}'
+      context: watched
+      list: '{? trakt.series ?}'
+    accept_all: yes
+    exec: echo "{{series_name}} |-| {{series_id}}"
+
+## add tv show to trakt list
+  series_add_trakt:
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    accept_all: yes
+    trakt_lookup:
+      account: '{? trakt.account ?}'
+    metainfo_series: yes
+    list_add:
+      - trakt_list:
+          username: '{? trakt.account ?}'
+          account: '{? trakt.account ?}'
+          list: '{? trakt.series ?}'
+          type: shows
+    list_add:
+      - trakt_list:
+          username: '{? trakt.account ?}'
+          account: '{? trakt.account ?}'
+          list: watchlist
+          type: shows
+
+## remove series from sonarr that are present in the dropped trakt list
+  dropped_series_remove:
+    priority: 4
+    disable:
+      - seen
+      - seen_info_hash
+      - retry_failed
+    sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+          root_folder_path: "/{? folder.series ?}"
+          include_data: true
+    crossmatch:
+      from:
+        - trakt_list:
+            account: '{? trakt.account ?}'
+            username: '{? trakt.account ?}'
+            list: dropped
+            type: shows
+            strip_dates: yes
+      fields:
+        - title
+      action: accept
+      exact: yes
+    set:
+      location: '{{configure_series_path}}'
+    list_remove:
+      - sonarr_list:
+          base_url: http://localhost
+          port: 8989
+          api_key: '{? sonarr.api ?}'
+    delete:
+      allow_dir: true
+
+
+      
