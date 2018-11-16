@@ -361,13 +361,5 @@ tasks:
       exact: yes
     set:
       location: '{{configure_series_path}}'
-    list_remove:
-      - sonarr_list:
-          base_url: http://localhost
-          port: 8989
-          api_key: '{? sonarr.api ?}'
-    delete:
-      allow_dir: true
+    exec: '/opt/scripts/sonarr_delete_series {{sonarr_id}}'
 
-
-      
