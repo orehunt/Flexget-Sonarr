@@ -32,6 +32,7 @@ tasks:
           root_folder_path: "/{? folder.series ?}"
           ignore_episodes_with_files: yes
           search_missing_episodes: yes
+          profile_id: "{? sonarr.profile_id ?}"
 
 ## Get from anime list any shows that have already been seen, add to Sonarr and only get future episodes
 ## Also added with anime tag, tag list from http://localhost:8989/api/tag?apikey=APIKEY
@@ -64,6 +65,7 @@ tasks:
           root_folder_path: "/{? folder.series ?}"
           ignore_episodes_with_files: yes
           ignore_episodes_without_files: yes
+          profile_id: "{? sonarr.profile_id ?}"
 
 ## Get from series list any shows that have unseen episodes, add to Sonarr and search for missing
   series_unseen_add:
@@ -90,6 +92,7 @@ tasks:
           ignore_episodes_with_files: yes
           root_folder_path: "/{? folder.series ?}"
           search_missing_episodes: yes
+          profile_id: "{? sonarr.profile_id ?}"
 
 ## Get from series list any shows that have already been seen, add to Sonarr and only get future episodes
 ## Skip ended to keep Sonarr clean
@@ -117,6 +120,7 @@ tasks:
           ignore_episodes_with_files: yes
           ignore_episodes_without_files: yes
           root_folder_path: "/{? folder.series ?}"
+          profile_id: "{? sonarr.profile_id ?}"
 
 ## List compare Sonarr and series list, anything in Sonarr that is not in series list is added to entry_list sonarr-rm
 ## A direct list match between trakt and Sonarr does not work and removes shows incorrectly
