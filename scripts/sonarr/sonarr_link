@@ -1,0 +1,12 @@
+#!/bin/bash
+exit
+DLPATH=/root/Downloads
+LINKPATH=/shows/stream
+mkdir -p $LINKPATH
+for f in $(find $DLPATH -type f); do
+    if [ ! -e "$LINKPATH/$(basename $f)" ] &&
+           guessit -P mimetype $f | grep video; then
+        ln -f $f /shows/stream
+    fi
+done
+

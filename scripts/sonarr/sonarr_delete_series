@@ -1,0 +1,7 @@
+#!/bin/bash
+
+[ -z "$1" ] && { echo provide a series id; exit 1; }
+apikey=4f3a98b538594bd8a58f162fb4cce2b5
+host=localhost:8989
+
+curl -s -X DELETE "$host/api/Series/$1?apikey=$apikey&deleteFiled=true"

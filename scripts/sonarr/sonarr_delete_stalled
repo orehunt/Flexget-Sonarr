@@ -1,0 +1,37 @@
+#!/bin/bash
+
+apikey=4f3a98b538594bd8a58f162fb4cce2b5
+host=localhost:8989
+sleep=600
+blacklist=true
+
+# host=localhost:8081
+# category=tv-sonarr
+# torrents=$(curl -s "$host/query/torrents?filter=downloading&category=$category")
+# stalled=$(jq -r '.[] | "\(.hash) \(.state)"' <<< "$torrents" | grep stalledDL)
+# stalled_hashes_string=$(echo -n "$stalled" | cut -d' ' -f1 | tr '\n' '|')
+
+# [ -n "$stalled_hashes_string" ] &&
+    # curl -s -X POST "$host/command/deletePerm" -d "hashes=$stalled_hashes_string"
+
+while :; do
+    queue=$(curl -s -X GET "$host/api/queue?apikey=$apikey" | jq -r '.[] | "\(.id) \(.status) \(.timeleft) \(.episode.id)"')
+    read -d '' warning < <(grep "Warning" <<< "$queue")
+    read -d '' timeleft < <(grep -vi queued < <(grep "100.00:00:00" <<< "$queue"))
+
+    IFS=$'\n'
+    for t in $warning $timeleft; do
+        id=${t/ *}
+        eval "release$id=$((1+release$id))"
+        if eval "[ \"\$release$id\" -gt 2 ]"; then
+                epIds="${epIds}${t/* },"
+		curl -s -X DELETE "$host/api/queue/$id?apikey=$apikey&blacklist=$blacklist"
+        fi
+    done
+    if [ -n "$epIds" ]; then
+	    epIds="${epIds%,}"
+	    curl -s -X POST "$host/api/command?apikey=$apikey" -d "{\"name\":\"episodeSearch\",\"episodeIds\":[$epIds]}"
+    fi
+    sleep $sleep
+done
+
