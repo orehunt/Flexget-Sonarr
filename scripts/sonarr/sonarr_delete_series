@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 [ -z "$1" ] && { echo provide a series id; exit 1; }
 apikey=4f3a98b538594bd8a58f162fb4cce2b5

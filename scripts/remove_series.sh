@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 apikey=${SONARR_APIKEY}
 host=localhost:8989

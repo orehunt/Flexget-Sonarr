@@ -219,6 +219,7 @@ tasks:
             account: '{? trakt.account ?}'
             username: '{? trakt.account ?}'
             list: '{? trakt.series ?}'
+            strip_dates: yes
             type: shows 
       fields:
         - title
