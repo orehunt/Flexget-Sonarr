@@ -7,6 +7,7 @@ series_to_remove(){
     seriesIds=$(curl -s -X GET "$host/api/Series?apikey=$apikey" | jq -r '.[] | "\(.title) |-| \(.id)" ')
     list=series.txt
     echo -n '' > $list
+    curl -s -X POST "$host/api/command?apikey=$apikey" -d '{"name": "rescanSeries"}'
 
     IFS=$'\n'
     for s in $seriesIds; do
@@ -14,7 +15,7 @@ series_to_remove(){
         title=${s/ |-|*}
         monitored=$(curl -s -X GET "$host/api/episode?apikey=${apikey}&seriesId=$id" | jq '.[] | select(.monitored == true ) | .id ')
         monitored_count=$(echo -n "$monitored" | wc -l)
-        if [ "$monitored_count" = 0 ]; then
+        if [ -z "$monitored" ]; then
             echo "$title" >> $list
         fi
     done
