@@ -363,7 +363,7 @@ tasks:
       fields:
         - title
       action: accept
-      exact: yes
+      exact: no
     set:
       location: '{{configure_series_path}}'
     exec: '/opt/scripts/sonarr_delete_series {{sonarr_id}}'
