@@ -230,6 +230,7 @@ tasks:
           account: '{? trakt.account ?}'
           username: '{? trakt.account ?}'
           list: '{? trakt.series ?}'
+          strip_dates: yes
           type: shows 
       - sonarr_list:
           base_url: http://localhost
@@ -241,6 +242,7 @@ tasks:
           account: '{? trakt.account ?}'
           username: '{? trakt.account ?}'
           list: watchlist
+          strip_dates: yes
           type: shows 
 
 ## remove watched and ended/canceled series from trakt watchlist and add to dropped
