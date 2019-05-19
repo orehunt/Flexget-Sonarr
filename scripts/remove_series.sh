@@ -13,7 +13,7 @@ series_to_remove(){
     for s in $seriesIds; do
         id=${s/*|-| }
         title=${s/ |-|*}
-        monitored=$(curl -s -X GET "$host/api/episode?apikey=${apikey}&seriesId=$id" | jq '.[] | select(.monitored == true ) | .id ')
+        monitored=$(curl -s -X GET "$host/api/episode?apikey=${apikey}&seriesId=$id" | jq '.[] | select(.monitored == true ) | select(.airDate != null) | .id ')
         monitored_count=$(echo -n "$monitored" | wc -l)
         if [ -z "$monitored" ]; then
             echo "$title" >> $list
