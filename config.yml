@@ -182,6 +182,7 @@ tasks:
       recursive: yes
       retrieve: files
     metainfo_series: yes
+    thetvdb_lookup: yes
     trakt_lookup:
       account: '{? trakt.account ?}'
       username: '{? trakt.account ?}'
